@@ -273,7 +273,7 @@ void checkBadgeMode() {
   redButtonADebouncer.update();
   blueButtonBDebouncer.update();
 
-  if (blueButtonBDebouncer.read() == LOW && blueButtonBDebouncer.read() == LOW) {
+  if (redButtonADebouncer.read() == LOW && blueButtonBDebouncer.read() == LOW) {
     badgeMode = GAME_MODE;
   } else {
     badgeMode = DISPLAY_MODE;
