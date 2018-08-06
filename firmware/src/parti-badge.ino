@@ -107,6 +107,7 @@ bool displayingLogo = false;
 bool displayingTitle = false;
 bool displayingWearerDetails = false;
 bool displayingAnimations = false;
+bool displayingRedEvent = false;
 bool animationsInterrupted = false;
 bool displayingEtchASketch = false;
 bool playingRoll = false;
@@ -187,15 +188,17 @@ void loop() {
 
   if (badgeMode == DISPLAY_MODE) {
     redButtonADebouncer.update();
-    if (redButtonADebouncer.read() == LOW && ! displayingAnimations && ! animationsInterrupted && ! inCodeMode) {
+    if (redButtonADebouncer.read() == LOW)
+    {
       resetDisplayBools();
-
-      displayingAnimations = true;
-      toggleAllButtons(LOW);
-      digitalWrite(RED_LED, HIGH);
-
+      digitalWrite(YELLOW_LED, HIGH);
+      Particle.publish("button-pressed", "red", MY_DEVICES);
       clearScreen();
-      cycleAnimations();
+      display.setTextSize(2);
+      display.setTextWrap(true);
+      display.println("Fired Red Button event");
+      display.display();
+      displayingRedEvent = true;
     }
 
     blueButtonBDebouncer.update();
