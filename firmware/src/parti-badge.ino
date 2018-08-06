@@ -96,6 +96,7 @@ unsigned long previousEnvReading = 0;
 // Wearer details
 String wearerFirstName;
 String wearerLastName;
+String wearerTwitter;
 
 // Default to display mode, but we'll determine this based on a
 // the user holding a button down at startup
@@ -124,6 +125,7 @@ int displayX = display.width()/2;
 int displayY = display.height()/2;
 
 void setup() {
+
   Serial.begin(115200);
   resetDisplayBools();
 
@@ -181,6 +183,8 @@ void setup() {
 
   // Scroll the title text on the screen
   display.startscrollleft(0x00, 0x0F);
+
+
 }
 
 void loop() {
@@ -227,11 +231,14 @@ void loop() {
     yellowButtonDDebouncer.update();
     if (yellowButtonDDebouncer.read() == LOW && ! displayingWearerDetails) {
       resetDisplayBools();
-      displayingWearerDetails = true;
 
+      Serial.println("Yellow");
+
+      displayingWearerDetails = true;
       displayWearerDetails();
       toggleAllButtons(LOW);
       digitalWrite(YELLOW_LED, HIGH);
+
     }
 
     if (currentMillis - previousEnvReading > TEMP_CHECK_INTERVAL) {
@@ -287,14 +294,17 @@ void checkBadgeMode() {
 void cloudInit() {
   Particle.variable("wearerFName", wearerFirstName);
   Particle.variable("wearerLName", wearerLastName);
+  Particle.variable("wearerTwitter", wearerTwitter);
 
   Particle.variable("currentTemp", currentTemp);
   Particle.variable("currentHu", currentHumidity);
 
   Particle.function("updateFName", updateFirstNameHandler);
   Particle.function("updateLName", updateLastNameHandler);
+  Particle.function("updateTwitter", updateTwitterHandler);
 
   Particle.function("checkTemp", checkTempHandler);
+
   Particle.function("publishSensorData", publishSensorData);
 
 }
@@ -309,6 +319,7 @@ int publishSensorData(String command) {
   readSensors();
   Particle.publish("env-sensors", "{\"temp\":" + String(currentTemp) + ",\"hu\":" + String(currentHumidity) + "}", PRIVATE);
 }
+
 // Fetch wearer details from our WearerInfo class
 void initWearerDetails() {
   wearerInfo = WearerInfo();
@@ -316,6 +327,7 @@ void initWearerDetails() {
   if (wearerInfo.isSet()) {
     wearerFirstName = wearerInfo.getFirstName();
     wearerLastName = wearerInfo.getLastName();
+    wearerTwitter = wearerInfo.getTwitter();
   }
 }
 
@@ -345,6 +357,13 @@ void displayWearerDetails() {
 
   if (fnameLength > 0 || lnameLength > 0) {
     clearScreen();
+    //put Twitter info up in yellow band area
+    if (wearerTwitter.length() > 10) {
+      display.setTextSize(1);
+    }
+    if (wearerTwitter.length() > 0) {
+      display.println(wearerTwitter);
+    }
 
     // setTextSize based on largest of two lengths
     // Display is 128 x 64
@@ -367,6 +386,8 @@ void displayWearerDetails() {
     if (wearerLastName.length() > 0) {
       display.println(wearerLastName);
     }
+
+
 
     display.display();
     display.startscrollleft(0x00, 0x0F);
@@ -491,8 +512,6 @@ void getTempAndHumidity() {
   int prevTemp = currentTemp;
   int prevHumidity = currentHumidity;
 
-  currentTemp = round((envSensor.readTemperature() * 1.8 + 32.00)*10)/10;
-  currentHumidity = round(envSensor.readHumidity()*10)/10;
   readSensors();
 
   // If either has changed and these values are being displayed, update the display
@@ -699,6 +718,17 @@ int updateLastNameHandler(String data) {
 
   fireNamedEvent();
   if (displayingWearerDetails) {
+    displayWearerDetails();
+  }
+  return 1;
+}
+
+int updateTwitterHandler(String data) {
+  wearerTwitter = data;
+  wearerInfo.setTwitter(wearerTwitter);
+
+  fireNamedEvent();
+  if (displayWearerDetails) {
     displayWearerDetails();
   }
   return 1;

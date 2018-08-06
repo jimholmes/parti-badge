@@ -6,6 +6,7 @@ WearerInfo::WearerInfo() {
   if (_isSet == 1) {
     _firstName = getFromEEPROM(EEPROM_FIRSTNAME_LOCATION);
     _lastName = getFromEEPROM(EEPROM_LASTNAME_LOCATION);
+    _twitter = getFromEEPROM(EEPROM_TWITTER_LOCATION);
   }
 }
 
@@ -33,6 +34,18 @@ void WearerInfo::setLastName(String name) {
   EEPROM.put(EEPROM_SET_LOCATION, _isSet);
 }
 
+void WearerInfo::setTwitter(String name) {
+  char stringBuff[STRING_BUFFER_SIZE];
+  stringBuff[(sizeof(stringBuff) - 1)] = 0;
+  name.getBytes((unsigned char *)stringBuff, sizeof(stringBuff));
+
+  _twitter = name;
+  _isSet = 1;
+
+  EEPROM.put(EEPROM_TWITTER_LOCATION, stringBuff);
+  EEPROM.put(EEPROM_SET_LOCATION, _isSet);
+}
+
 boolean WearerInfo::isSet() {
   return _isSet;
 }
@@ -51,6 +64,14 @@ String WearerInfo::getLastName() {
   }
 
   return _lastName;
+}
+
+String WearerInfo::getTwitter() {
+  if (_twitter.length() == 0) {
+    _twitter = getFromEEPROM(EEPROM_TWITTER_LOCATION);
+  }
+
+  return _twitter;
 }
 
 String WearerInfo::getFromEEPROM(int address) {
