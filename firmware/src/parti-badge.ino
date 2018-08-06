@@ -292,8 +292,20 @@ void cloudInit() {
   Particle.function("updateLName", updateLastNameHandler);
 
   Particle.function("checkTemp", checkTempHandler);
+  Particle.function("publishSensorData", publishSensorData);
+
 }
 
+int readSensors() {
+  currentTemp = round((envSensor.readTemperature() * 1.8 + 32.00)*10)/10;
+  currentHumidity = round(envSensor.readHumidity()*10)/10;
+  return 1;
+}
+
+int publishSensorData(String command) {
+  readSensors();
+  Particle.publish("env-sensors", "{\"temp\":" + String(currentTemp) + ",\"hu\":" + String(currentHumidity) + "}", PRIVATE);
+}
 // Fetch wearer details from our WearerInfo class
 void initWearerDetails() {
   wearerInfo = WearerInfo();
@@ -478,6 +490,7 @@ void getTempAndHumidity() {
 
   currentTemp = round((envSensor.readTemperature() * 1.8 + 32.00)*10)/10;
   currentHumidity = round(envSensor.readHumidity()*10)/10;
+  readSensors();
 
   // If either has changed and these values are being displayed, update the display
   if (displayingTemp && (prevTemp != currentTemp || prevHumidity != currentHumidity)) {
