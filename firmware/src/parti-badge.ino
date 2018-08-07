@@ -1,32 +1,7 @@
 /*
- *      Copyright 2018 Particle Industries, Inc.
- *
- *      Licensed under the Apache License, Version 2.0 (the "License");
- *      you may not use this file except in compliance with the License.
- *      You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *      Unless required by applicable law or agreed to in writing, software
- *      distributed under the License is distributed on an "AS IS" BASIS,
- *      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *      See the License for the specific language governing permissions and
- *      limitations under the License.
- */
-/*
- *      Project: #PartiBadge, 2018 THAT Conference Edition
- *
- *      Description:
- *          This is the firmware for a custom, Photon-based badge PCB that includes:
- *              1. A 1" OLED Screen
- *              2. An SMD Piezo buzzer
- *              3. A SPDT Switch
- *              4. A 5-way joystick
- *              5. An SMD Si7021 temperature and Humidity sensor
- *              6. 4 Tactile LED Buttons in Red, Blue, Green and Yellow/Orange
- *              7. An I2C-Compatible breakout for #BadgeLife add-ons
- *              8. An IR Receiver on the Photon TX pin
- *
+ *      Forked from https://github.com/particle-iot/parti-badge
+ *    See their repo for Apache license info.
+ *    This is my implementation/hacks/tweaks of Particle's #PartiBadge code.
  */
 
 #include "Particle.h"
@@ -129,62 +104,36 @@ void setup() {
   Serial.begin(115200);
   resetDisplayBools();
 
-  // Get the current deviceId
   deviceId = System.deviceID();
-
-  // Initialize Temp and Humidity sensor
   while(! envSensor.begin());
-
-  // Init OLED
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-
-  // Enable IR Receiver
   irrecv.enableIRIn();
 
-  // Show Particle Splashscreen
   showSplashscreen();
-
-  // Show the title screen
   showTitle();
 
-  // Set up cloud variables and functions
   cloudInit();
-
   rollSetup();
 
-  // Set the Piezo buzzer as an output
   pinMode(BUZZER_PIN, OUTPUT);
 
-  // Init the LED Buttons
   initButtons();
 
-  // Set up Interrupts
   attachInterrupt(BLUE_BUTTON_B, handleInterrupt, CHANGE);
   attachInterrupt(GREEN_BUTTON_C, handleInterrupt, CHANGE);
   attachInterrupt(YELLOW_BUTTON_D, handleInterrupt, CHANGE);
 
-  // Get an initial temp and humidity reading
   getTempAndHumidity();
 
-  //Init Tactile LED Buttons
   initLEDButtons();
 
-  // Play a startup sound on the Piezo
   if (!startupSoundPlayed) playStartup(BUZZER_PIN);
 
-  // Determine if we're in display or game mode
   checkBadgeMode();
-
-  // Connect to the Particle device cloud
   Particle.connect();
-
-  // Fetch badge wearer details from EEPROM
   initWearerDetails();
 
-  // Scroll the title text on the screen
   display.startscrollleft(0x00, 0x0F);
-
-
 }
 
 void loop() {
@@ -212,8 +161,6 @@ void loop() {
       displayingTemp = true;
       toggleAllButtons(LOW);
       digitalWrite(BLUE_LED, HIGH);
-
-      // Show Temp and Humidity on Display
       showTempAndHumidity();
     }
 
@@ -231,9 +178,6 @@ void loop() {
     yellowButtonDDebouncer.update();
     if (yellowButtonDDebouncer.read() == LOW && ! displayingWearerDetails) {
       resetDisplayBools();
-
-      Serial.println("Yellow");
-
       displayingWearerDetails = true;
       displayWearerDetails();
       toggleAllButtons(LOW);
@@ -265,12 +209,10 @@ void loop() {
     checkInputSequence();
   } else if (badgeMode == GAME_MODE) {
     configureGame();
-
     playGame();
   }
 }
 
-// Show the Spark on startup
 void showSplashscreen() {
   clearScreen();
   display.drawBitmap(0, 0, sparkLogo, 128, 64, 1);
@@ -290,7 +232,6 @@ void checkBadgeMode() {
   }
 }
 
-// Init our Device Cloud variables and functions
 void cloudInit() {
   Particle.variable("wearerFName", wearerFirstName);
   Particle.variable("wearerLName", wearerLastName);
@@ -320,7 +261,6 @@ int publishSensorData(String command) {
   Particle.publish("env-sensors", "{\"temp\":" + String(currentTemp) + ",\"hu\":" + String(currentHumidity) + "}", PRIVATE);
 }
 
-// Fetch wearer details from our WearerInfo class
 void initWearerDetails() {
   wearerInfo = WearerInfo();
 
@@ -331,7 +271,6 @@ void initWearerDetails() {
   }
 }
 
-// Show the title text on the display
 void showTitle() {
   titleShown = true;
 
@@ -349,7 +288,6 @@ void showTitle() {
   display.display();
 }
 
-// Display the wearer's first and last name on the display
 void displayWearerDetails() {
   int fnameLength = wearerFirstName.length();
   int lnameLength = wearerLastName.length();
@@ -357,7 +295,6 @@ void displayWearerDetails() {
 
   if (fnameLength > 0 || lnameLength > 0) {
     clearScreen();
-    //put Twitter info up in yellow band area
     if (wearerTwitter.length() > 10) {
       display.setTextSize(1);
     }
@@ -387,14 +324,11 @@ void displayWearerDetails() {
       display.println(wearerLastName);
     }
 
-
-
     display.display();
     display.startscrollleft(0x00, 0x0F);
   }
 }
 
-// Init debouncers for all of our inputs
 void initButtons() {
   // Init Buttons as Inputs
   redButtonADebouncer.attach(RED_BUTTON_A, INPUT_PULLUP);
@@ -427,17 +361,14 @@ void handleInterrupt() {
   }
 }
 
-// Set up the tactile LED buttons
 void initLEDButtons() {
   buttonsInitialized = true;
 
   int del = 300;
   int medDel = 500;
 
-  // Init D7
   pinMode(D7, INPUT_PULLDOWN);
 
-  // Init LEDs and Outputs
   pinMode(RED_LED, OUTPUT);
   pinMode(BLUE_LED, OUTPUT);
   pinMode(GREEN_LED, OUTPUT);
@@ -464,7 +395,6 @@ void initLEDButtons() {
   toggleAllButtons(HIGH);
 }
 
-// Show the temperature and humidity on the display
 void showTempAndHumidity() {
   clearScreen();
 
@@ -487,7 +417,6 @@ void showTempAndHumidity() {
   display.display();
 }
 
-// Toggle all the buttons on or off
 void toggleAllButtons(int state) {
   digitalWrite(RED_LED, state);
   digitalWrite(BLUE_LED, state);
@@ -495,7 +424,6 @@ void toggleAllButtons(int state) {
   digitalWrite(YELLOW_LED, state);
 }
 
-// Reset all display-related state booleans
 void resetDisplayBools() {
   displayingTemp = false;
   displayingWearerDetails = false;
@@ -507,7 +435,6 @@ void resetDisplayBools() {
   playingRoll = false;
 }
 
-// Get temp and humidity from the sensors
 void getTempAndHumidity() {
   int prevTemp = currentTemp;
   int prevHumidity = currentHumidity;
@@ -522,7 +449,6 @@ void getTempAndHumidity() {
   fireEnvSensorsEvent(currentTemp, currentHumidity);
 }
 
-// Clear the OLED display
 void clearScreen() {
   display.stopscroll();
   display.clearDisplay();
@@ -531,7 +457,6 @@ void clearScreen() {
   display.setTextWrap(true);
 }
 
-// Init Etch A Sketch mode on the OLED
 void initEtchASketch() {
   clearScreen();
   display.println();
@@ -548,8 +473,6 @@ void initEtchASketch() {
   drawFilledCircle();
 }
 
-// Update the display during Etch A Sketch Mode. Draw a new filled circle
-// based on the which joystick direction was used.
 void etchASketch() {
   int lastY = displayY;
   int lastX = displayX;
@@ -636,7 +559,6 @@ void irDump(decode_results *results) {
     }
 }
 
-// Display the IR event received on the screen
 void displayIRName(String name) {
   clearScreen();
   display.setTextSize(2);
@@ -699,7 +621,6 @@ void checkInputSequence() {
   checkingInputs = false;
 }
 
-//Update the first name when called from a cloud function
 int updateFirstNameHandler(String data) {
   wearerFirstName = data;
   wearerInfo.setFirstName(wearerFirstName);
@@ -711,7 +632,6 @@ int updateFirstNameHandler(String data) {
   return 1;
 }
 
-//Update the last name when called from a cloud function
 int updateLastNameHandler(String data) {
   wearerLastName = data;
   wearerInfo.setLastName(wearerLastName);
@@ -734,7 +654,6 @@ int updateTwitterHandler(String data) {
   return 1;
 }
 
-// Check the temp and humidity when called from a cloud function
 int checkTempHandler(String data) {
   getTempAndHumidity();
 
