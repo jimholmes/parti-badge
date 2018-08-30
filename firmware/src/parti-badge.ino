@@ -235,18 +235,17 @@ void checkBadgeMode() {
 void cloudInit() {
   Particle.variable("wearerFName", wearerFirstName);
   Particle.variable("wearerLName", wearerLastName);
-  Particle.variable("wearerTwitter", wearerTwitter);
+  Particle.variable("wearerTwitt", wearerTwitter);
 
   Particle.variable("currentTemp", currentTemp);
   Particle.variable("currentHu", currentHumidity);
 
   Particle.function("updateFName", updateFirstNameHandler);
   Particle.function("updateLName", updateLastNameHandler);
-  Particle.function("updateTwitter", updateTwitterHandler);
+  Particle.function("updateTwitt", updateTwitterHandler);
 
   Particle.function("checkTemp", checkTempHandler);
-
-  Particle.function("publishSensorData", publishSensorData);
+  Particle.function("pubEnvData", publishSensorData);
 
 }
 
@@ -258,7 +257,8 @@ int readSensors() {
 
 int publishSensorData(String command) {
   readSensors();
-  Particle.publish("env-sensors", "{\"temp\":" + String(currentTemp) + ",\"hu\":" + String(currentHumidity) + "}", PRIVATE);
+  Particle.publish("tc-env-sensors", "{\"temp\":" + String(currentTemp)
+         + ",\"humidity\":" + String(currentHumidity) + "}", PRIVATE);
 }
 
 void initWearerDetails() {
